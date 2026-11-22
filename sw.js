@@ -1,6 +1,6 @@
 // Change this revision when any of the precached files changes.
 const cachePrefix = `exascale:${self.registration.scope}:`;
-const cacheName = cachePrefix + "pwa-1";
+const cacheName = cachePrefix + "pwa-2";
 const files = [
   "./index.html",
   "./styles.css",

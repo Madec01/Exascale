@@ -1852,3 +1852,9 @@ body.has-panel .connection-hint {
     bottom: auto;
   }
 }
+
+@media (min-width: 701px) and (max-height: 550px) {
+  body:not(.has-panel) .first-circuit-active ~ .canvas-controls {
+    right: 325px;
+  }
+}

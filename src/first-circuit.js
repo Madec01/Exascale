@@ -2,40 +2,28 @@ export function firstCircuit(state) {
   if (state.stage !== 1 || !state.tutorial) return null;
   if (state.tutorial === 2) return { step: "done" };
 
-  const { nodes, edges, techs, rp } = state;
-  const generator = nodes.find((node) => node.type === "generator");
+  const { nodes, edges, techs, rp, stats } = state;
+  const generators = nodes.filter((node) => node.type === "generator");
+  const labs = nodes.filter((node) => node.type === "lab");
   const modem = nodes.find((node) => node.type === "modem");
-  const lab = nodes.find((node) => node.type === "lab");
-  if (!generator || !modem || !lab) return { step: "restore" };
+  if (!generators.length || !labs.length || !modem) return { step: "restore" };
+  const cables = edges.filter((edge) => edge.kind === "data");
+  const feeds = (target) => generators.find((node) =>
+    cables.some((edge) => edge.from === node.id && edge.to === target.id)
+  );
+  const lab = labs.find(feeds) || labs[0];
+  const researchSource = feeds(lab);
+  const free = generators.find((node) => !cables.some((edge) => edge.from === node.id));
 
-  const outgoing = (node) =>
-    edges.find((edge) => edge.kind === "data" && edge.from === node.id);
-  const sourceCable = outgoing(generator);
-  const correctors = nodes.filter((node) => node.type === "corrector");
-  const corrector =
-    correctors.find((node) => node.id === sourceCable?.to) ||
-    correctors.find((node) => outgoing(node)?.to === modem.id) ||
-    correctors[0];
-  const ports = (from, to) => ({ from: from.id, to: to.id });
-
-  if (!techs.includes("parity")) {
-    if (rp >= 30) return { step: "research" };
-    if (sourceCable?.to === lab.id) return { step: "earn" };
-    return sourceCable
-      ? { step: "remove-sales", edge: sourceCable.id }
-      : { step: "wire-lab", ...ports(generator, lab) };
+  if (!researchSource && !stats.rpRate) {
+    if (free && (generators.length > 1 || stats.creditsRate))
+      return { step: "wire", from: free.id, to: lab.id };
+    return { step: "build" };
   }
-  if (!corrector) return { step: "build", generator, modem };
-  if (sourceCable?.to !== corrector.id)
-    return sourceCable
-      ? { step: "remove-source", edge: sourceCable.id }
-      : { step: "wire-corrector", ...ports(generator, corrector) };
-
-  const correctorCable = outgoing(corrector);
-  if (correctorCable?.to !== modem.id)
-    return correctorCable
-      ? { step: "remove-output", edge: correctorCable.id }
-      : { step: "wire-modem", ...ports(corrector, modem) };
-
-  return { step: state.stats.creditsRate >= 1.99 ? "success" : "wait-sales" };
+  if (researchSource && researchSource.level < 2 && !techs.includes("parity"))
+    return { step: "generator", node: researchSource.id };
+  if (researchSource && lab.level < 2 && !techs.includes("parity"))
+    return { step: "lab", node: lab.id };
+  if (techs.includes("parity")) return { step: "success" };
+  return { step: rp >= 30 ? "research" : "earn" };
 }

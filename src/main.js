@@ -383,6 +383,40 @@ function recipeText(recipe) {
 function detail(label, value, id = "") {
   return `<div class="detail-row"><span>${label}</span><strong ${id ? `data-live="${id}"` : ""}>${value}</strong></div>`;
 }
+function starterUpgradePreview(node) {
+  if (engine.state.stage !== 1 || node.level >= 8 ||
+      !["generator", "lab", "modem"].includes(node.type)) return "";
+  const baseline = new Engine(engine.state);
+  const upgraded = new Engine(engine.state);
+  upgraded.state.nodes.find((candidate) => candidate.id === node.id).level++;
+  function measure(simulation) {
+    for (let i = 0; i < 20; i++) simulation.tick(0.1);
+    const { credits, rp } = simulation.state;
+    for (let i = 0; i < 10; i++) simulation.tick(0.1);
+    return {
+      credits: simulation.state.credits - credits,
+      rp: simulation.state.rp - rp,
+    };
+  }
+  const before = measure(baseline);
+  const after = measure(upgraded);
+  const output = node.type === "generator" ? "Production nominale" : "Capacité d’entrée";
+  const rate = 2 ** (node.level - 1);
+  const edges = baseline.state.edges.filter((edge) => edge.kind === "data");
+  const outgoing = edges.find((edge) => edge.from === node.id);
+  const target = baseline.state.nodes.find((other) => other.id === outgoing?.to);
+  let bottleneck = "";
+  if (node.type === "generator" && !outgoing)
+    bottleneck = "Reliez la sortie du générateur pour utiliser sa production.";
+  else if (node.type === "generator" && target?.capacity > 0 &&
+           target.inRate >= target.capacity - 0.01 &&
+           Math.abs(after.rp - before.rp) + Math.abs(after.credits - before.credits) < 0.01)
+    bottleneck = `${def(target.type).name} à pleine capacité. Améliorez aussi ce module.`;
+  else if (node.type !== "generator" && !edges.some((edge) => edge.to === node.id))
+    bottleneck = "Reliez une source à l’entrée de ce module.";
+  return `<div class="notice"><strong>Niveau ${node.level + 1}</strong><br>${output} : ${rate} → ${rate * 2} textes/s<br>Débit estimé : ${num(before.credits)} → ${num(after.credits)} Cr/s · ${num(before.rp)} → ${num(after.rp)} RP/s${bottleneck ? "<br>" + html(bottleneck) : ""}</div>`;
+}
+
 function renderInspector() {
   const s = engine.state;
   if (!selected) {
@@ -416,10 +450,15 @@ function renderInspector() {
   }
   const d = def(n.type),
     hardware = s.stage >= 4;
+  const preview = starterUpgradePreview(n);
+  const price = engine.nodeUpgradeCost(n.id);
+  const upgrade = n.level < 8
+    ? `<button class="small-button" data-action="upgrade-node" data-id="${html(n.id)}">Améliorer · ${num(price.cost)} ${price.currency === "ne" ? "Nₑ" : "Cr"}</button>`
+    : "";
   setPanel(
     d.name,
     "INSPECTEUR / " + String(n.id).toUpperCase(),
-    `<div class="inspector-header"><div class="node-symbol" style="--node-color:${html(d.color)}">${icons[n.type] || "◇"}</div><div><h3>${html(d.short || d.name)} · niveau ${n.level || 1}</h3><span class="status-pill" data-live="status">${html(n.status || "ATTENTE")}</span></div></div>${detail("Débit entrant", num(n.inRate, "o/s"), "inRate")}${detail("Débit sortant", num(n.outRate, "o/s"), "outRate")}${detail("Capacité maximale", num(n.capacity, "o/s"), "capacity")}${detail("Utilisation", pct(n.utilization), "utilization")}<div class="meter"><i data-live-bar="utilization" style="width:${(n.utilization || 0) * 100}%"></i></div>${detail("Mémoire tampon", num(n.buffer, "o") + " / " + num(n.bufferMax, "o") + " · " + pct(n.buffer / (n.bufferMax || 1)), "buffer")}${detail("Allocation de calcul", num(n.cpuUsed || n._cpuUsed || n.cycles || 0, "Hz") + " / " + num(n.cpuAllocated || 0, "Hz"), "cpuAllocation")}${n.gpuAllocated > 0 ? detail("Calcul GPU utilisé / alloué", num(n.gpuUsed || n._gpuUsed || 0, "TFLOPS") + " / " + num(n.gpuAllocated || 0, "TFLOPS"), "gpuAllocation") : ""}${hardware ? detail("Puissance absorbée", num(n.power, "kW"), "power") + detail("Température", num(n.temp, "°C"), "temp") + detail("Bridage thermique", pct(1 - Math.max(0, Math.min(1, 1 - ((n.temp || 20) - 65) / 35))), "throttle") : ""}${detail("Corruption", pct(n.corruption || 0), "corruption")}${detail("Pureté", pct(n.purity ?? 1), "purity")}${n.type === "compressor" ? detail("Compression", n.ai && s.techs.includes("neuralzip") ? "15:1" : "2,5:1") : ""}<label class="range-field"><span class="range-caption">Priorité CPU / GPU <output id="allocation-value">${n.allocation || 10}</output></span><input type="range" min="1" max="100" step="1" value="${n.allocation || 10}" data-control="allocation" aria-label="Allocation du calcul"></label>${
+    `<div class="inspector-header"><div class="node-symbol" style="--node-color:${html(d.color)}">${icons[n.type] || "◇"}</div><div><h3>${html(d.short || d.name)} · niveau ${n.level || 1}</h3><span class="status-pill" data-live="status">${html(n.status || "ATTENTE")}</span></div></div>${preview ? preview + upgrade : ""}${detail("Débit entrant", num(n.inRate, "o/s"), "inRate")}${detail("Débit sortant", num(n.outRate, "o/s"), "outRate")}${detail("Capacité maximale", num(n.capacity, "o/s"), "capacity")}${detail("Utilisation", pct(n.utilization), "utilization")}<div class="meter"><i data-live-bar="utilization" style="width:${(n.utilization || 0) * 100}%"></i></div>${detail("Mémoire tampon", num(n.buffer, "o") + " / " + num(n.bufferMax, "o") + " · " + pct(n.buffer / (n.bufferMax || 1)), "buffer")}${detail("Allocation de calcul", num(n.cpuUsed || n._cpuUsed || n.cycles || 0, "Hz") + " / " + num(n.cpuAllocated || 0, "Hz"), "cpuAllocation")}${n.gpuAllocated > 0 ? detail("Calcul GPU utilisé / alloué", num(n.gpuUsed || n._gpuUsed || 0, "TFLOPS") + " / " + num(n.gpuAllocated || 0, "TFLOPS"), "gpuAllocation") : ""}${hardware ? detail("Puissance absorbée", num(n.power, "kW"), "power") + detail("Température", num(n.temp, "°C"), "temp") + detail("Bridage thermique", pct(1 - Math.max(0, Math.min(1, 1 - ((n.temp || 20) - 65) / 35))), "throttle") : ""}${detail("Corruption", pct(n.corruption || 0), "corruption")}${detail("Pureté", pct(n.purity ?? 1), "purity")}${n.type === "compressor" ? detail("Compression", n.ai && s.techs.includes("neuralzip") ? "15:1" : "2,5:1") : ""}<label class="range-field"><span class="range-caption">Priorité CPU / GPU <output id="allocation-value">${n.allocation || 10}</output></span><input type="range" min="1" max="100" step="1" value="${n.allocation || 10}" data-control="allocation" aria-label="Allocation du calcul"></label>${
       s.stage >= 8
         ? `<label class="field-select">Zone<select data-control="zone">${[
             ["Europe", "Europe"],
@@ -452,7 +491,7 @@ function renderInspector() {
             )
             .join("")}</select></label>`
         : ""
-    }<div class="control-row"><button class="small-button" data-action="focus-node" data-id="${html(n.id)}">Centrer</button>${engine.upgradeNode ? `<button class="small-button" data-action="upgrade-node" data-id="${html(n.id)}">Améliorer${engine.nodeUpgradeCost ? " · " + num(engine.nodeUpgradeCost(n.id).cost) + " " + (engine.nodeUpgradeCost(n.id).currency === "ne" ? "Nₑ" : "Cr") : ""}</button>` : ""}</div>${s.stage >= 6 && d.stage <= 5 ? `<button class="small-button wide" data-action="inject-model" data-id="${html(n.id)}" ${n.ai ? "disabled" : ""}>${n.ai ? "✓ Modèle IA injecté" : "+ Injecter un modèle · " + num(s.models) + " disponible(s)"}</button><p class="panel-subtitle" style="margin-top:9px">Inférence : ${s.techs.includes("neuro") ? "1,2" : "2"} TFLOPS et 40 kW en continu.</p>` : ""}<div class="section-label">LIAISONS</div>${
+    }<div class="control-row"><button class="small-button" data-action="focus-node" data-id="${html(n.id)}">Centrer</button>${preview ? "" : upgrade}</div>${s.stage >= 6 && d.stage <= 5 ? `<button class="small-button wide" data-action="inject-model" data-id="${html(n.id)}" ${n.ai ? "disabled" : ""}>${n.ai ? "✓ Modèle IA injecté" : "+ Injecter un modèle · " + num(s.models) + " disponible(s)"}</button><p class="panel-subtitle" style="margin-top:9px">Inférence : ${s.techs.includes("neuro") ? "1,2" : "2"} TFLOPS et 40 kW en continu.</p>` : ""}<div class="section-label">LIAISONS</div>${
       s.edges
         .filter((e) => e.from === n.id || e.to === n.id)
         .map((e) => {
@@ -586,7 +625,7 @@ function renderHelp() {
   setPanel(
     "Dessiner l’émergence",
     "GUIDE DE L’ARCHITECTE",
-    `<div class="help-card"><h3>01 / Votre premier réseau</h3><p>Le générateur écrit des documents. Le modem les vend. Touchez « Modules » pour ajouter un laboratoire ou un traitement. Chaque pièce occupe une cellule.</p></div><div class="help-card"><h3>02 / Câbler au doigt</h3><p>Touchez le port de sortie à droite d’un module, puis le port d’entrée à gauche d’un autre. Vous pouvez aussi tirer le câble. Une pression longue sur un câble propose sa suppression.</p></div><div class="help-card"><h3>03 / Explorer le circuit</h3><p>Glissez sur le fond pour déplacer la caméra. Pincez à deux doigts ou utilisez la molette pour zoomer. Double-touchez un module pour le centrer. Glissez le boîtier pour le déplacer.</p></div><div class="help-card"><h3>04 / Le premier arbitrage</h3><p>Retirez la liaison vers le modem et reliez votre générateur au laboratoire. Débloquez le correcteur et la compression, puis reprenez les ventes. À l’ère 2, les routeurs répartiront vos données automatiquement.</p></div><div class="help-card"><h3>05 / Lire les flux</h3><p><span style="color:var(--cyan)">Cyan : moins de 70 %</span> de charge. <span style="color:var(--amber)">Ambre : 70–95 %</span>. <span style="color:var(--danger)">Rouge : saturation</span>. Les paquets voyagent réellement ; leur couleur révèle la nature des données. Un module en ATTENTE manque de flux ou de ressources.</p></div><div class="help-card"><h3>06 / Calcul, courant et chaleur</h3><p>La priorité CPU se règle dans l’inspecteur. À l’ère 4, changez de calque pour relier les transformateurs et les chillers aux modules. Au-dessus de 65 °C, le calcul ralentit. À 100 °C, il s’arrête.</p></div><div class="help-card"><h3>07 / Les neuf ères</h3><p>Poste isolé → Réseau local → Salle serveur → Datacenter → Big Data → IA spécialisée → Agents → Réseau planétaire → Conscience générale. Touchez l’objectif de progression pour voir les conditions de chaque transition.</p></div><div class="help-card"><h3>08 / Après l’éveil</h3><p>Réglez plasticité et ancrage dans le panneau Évolution. Un réseau cohérent produit de la néguentropie. La distillation transforme cette intelligence en modèle fondateur pour votre prochaine architecture.</p></div><div class="help-card"><h3>Raccourcis</h3><p><kbd>Espace</kbd> pause · <kbd>Échap</kbd> fermer · <kbd>F</kbd> centrer · <kbd>B</kbd> modules · <kbd>R</kbd> recherche.<br>Les commandes restent disponibles dans l’interface tactile.</p></div><button class="secondary-button wide" data-action="open-settings">Ouvrir les paramètres</button>`,
+    `<div class="help-card"><h3>01 / Votre premier réseau</h3><p>Le générateur écrit des documents. Le modem les vend. Ajoutez un deuxième générateur et reliez-le au labo pour chercher en parallèle.</p></div><div class="help-card"><h3>02 / Câbler au doigt</h3><p>Touchez le port de sortie à droite d’un module, puis le port d’entrée à gauche d’un autre. Vous pouvez aussi tirer le câble. Une pression longue sur un câble propose sa suppression.</p></div><div class="help-card"><h3>03 / Explorer le circuit</h3><p>Glissez sur le fond pour déplacer la caméra. Pincez à deux doigts ou utilisez la molette pour zoomer. Double-touchez un module pour le centrer. Glissez le boîtier pour le déplacer.</p></div><div class="help-card"><h3>04 / Le premier arbitrage</h3><p>Montez le niveau des générateurs pour produire davantage, puis celui des modems ou labos pour traiter le débit. Débloquez des traitements comme le correcteur et la compression. À l’ère 2, les routeurs répartissent vos données.</p></div><div class="help-card"><h3>05 / Lire les flux</h3><p><span style="color:var(--cyan)">Cyan : moins de 70 %</span> de charge. <span style="color:var(--amber)">Ambre : 70–95 %</span>. <span style="color:var(--danger)">Rouge : saturation</span>. Les paquets voyagent réellement ; leur couleur révèle la nature des données. Un module en ATTENTE manque de flux ou de ressources.</p></div><div class="help-card"><h3>06 / Calcul, courant et chaleur</h3><p>La priorité CPU se règle dans l’inspecteur. À l’ère 4, changez de calque pour relier les transformateurs et les chillers aux modules. Au-dessus de 65 °C, le calcul ralentit. À 100 °C, il s’arrête.</p></div><div class="help-card"><h3>07 / Les neuf ères</h3><p>Poste isolé → Réseau local → Salle serveur → Datacenter → Big Data → IA spécialisée → Agents → Réseau planétaire → Conscience générale. Touchez l’objectif de progression pour voir les conditions de chaque transition.</p></div><div class="help-card"><h3>08 / Après l’éveil</h3><p>Réglez plasticité et ancrage dans le panneau Évolution. Un réseau cohérent produit de la néguentropie. La distillation transforme cette intelligence en modèle fondateur pour votre prochaine architecture.</p></div><div class="help-card"><h3>Raccourcis</h3><p><kbd>Espace</kbd> pause · <kbd>Échap</kbd> fermer · <kbd>F</kbd> centrer · <kbd>B</kbd> modules · <kbd>R</kbd> recherche.<br>Les commandes restent disponibles dans l’interface tactile.</p></div><button class="secondary-button wide" data-action="open-settings">Ouvrir les paramètres</button>`,
   );
 }
 function updateInspector() {
@@ -706,30 +745,22 @@ function updateAffordability() {
     });
 }
 const firstCircuitInstructions = {
-  "remove-sales": [1, "Détournez les données vers le labo",
-    "Sélectionnez le câble surligné, puis choisissez « Retirer le câble ». La sortie du générateur ne peut servir qu’à une destination."],
-  "wire-lab": [1, "Alimentez le labo",
-    "Touchez les deux ports surlignés dans l’ordre : sortie du générateur, puis entrée du labo."],
-  earn: [1, "Accumulez 30 points de recherche",
-    "Le labo transforme les données en recherche. Les ventes reprendront quand vous reconnecterez le modem."],
-  research: [2, "Débloquez le correcteur",
-    "Le contrôle de parité permet de construire un module qui double la valeur des données."],
-  build: [2, "Installez le correcteur",
-    "Ajoutez un correcteur au circuit. Vous allez le relier entre le générateur et le modem."],
-  "remove-source": [2, "Libérez la sortie du générateur",
-    "Sélectionnez le câble surligné, puis choisissez « Retirer le câble »."],
-  "wire-corrector": [2, "Alimentez le correcteur",
-    "Touchez la sortie surlignée du générateur, puis l’entrée du correcteur."],
-  "remove-output": [2, "Libérez la sortie du correcteur",
-    "Sélectionnez le câble surligné, puis choisissez « Retirer le câble »."],
-  "wire-modem": [2, "Reprenez les ventes",
-    "Touchez la sortie surlignée du correcteur, puis l’entrée du modem."],
-  "wait-sales": [3, "Les données arrivent au modem",
-    "Le modem va vendre les premières données passées par le correcteur."],
-  done: [3, "Ventes doublées",
-    "Votre circuit est passé de 1 à 2 crédits par seconde. Accumulez 500 crédits pour accéder au Réseau local."],
+  build: [1, "Ajoutez un générateur de texte",
+    "Le premier générateur reste relié au modem. Le second alimentera le labo pendant que vous continuez à vendre."],
+  wire: [1, "Alimentez le labo",
+    "Touchez la sortie surlignée du générateur, puis l’entrée du labo."],
+  generator: [2, "Montez le générateur au niveau 2",
+    "Il produira deux textes par seconde. Le labo de niveau 1 ne peut en traiter qu’un."],
+  lab: [2, "Montez le labo au niveau 2",
+    "Le labo pourra utiliser les deux textes et doubler le débit de recherche."],
+  earn: [3, "Préparez le contrôle de parité",
+    "Votre modem continue à vendre pendant que le labo travaille."],
+  research: [3, "Débloquez le correcteur",
+    "Placez ensuite le correcteur avant le modem pour doubler la valeur des textes vendus."],
+  done: [3, "Vos deux circuits travaillent",
+    "Développez les ventes ou la recherche. Consultez les objectifs pour passer au Réseau local."],
   restore: [1, "Reconstituez le circuit",
-    "Le tutoriel utilise un générateur, un labo et un modem. Vous pouvez ajouter le module manquant ou passer le tutoriel."],
+    "Il vous faut un générateur, un labo et un modem. Ajoutez les modules manquants ou passez le tutoriel."],
 };
 
 function updateFirstCircuit() {
@@ -759,19 +790,20 @@ function updateFirstCircuit() {
     updateText("first-circuit-instruction", instruction);
     const { rp, stats, credits } = engine.state;
     let progress = "";
-    if (step === "earn") {
-      const rate = paused ? "simulation en pause" : `+${num(stats.rpRate)} /s`;
-      progress = `${Math.floor(rp)} / 30 points · ${rate} · ventes en pause`;
+    if (step === "earn" || step === "research") {
+      const rate = paused ? "simulation en pause" : `+${num(stats.rpRate)} RP/s`;
+      progress = `${Math.floor(rp)} / 30 points · ${rate}`;
     } else if (step === "done") {
-      progress = `${num(credits)} / 500 crédits`;
-    } else if (step === "wait-sales" && paused) {
-      progress = "Reprenez la simulation pour voir les ventes.";
+      progress = `${num(credits)} / 250 crédits`;
     }
     updateText("first-circuit-progress", progress);
     $("first-circuit-progress").hidden = !progress;
+    const upgradeLabel = guide.node ? `Améliorer · ${num(engine.nodeUpgradeCost(guide.node).cost)} crédits` : "";
     const action = {
       research: "Rechercher le contrôle de parité · 30 points",
-      build: `Ajouter le correcteur · ${num(constructionCost(def("corrector")))} crédits`,
+      build: `Ajouter le générateur · ${num(constructionCost(def("generator")))} crédits`,
+      generator: upgradeLabel,
+      lab: upgradeLabel,
       done: "Voir l’objectif de l’ère",
       restore: "Ouvrir les modules",
     }[step];
@@ -795,18 +827,19 @@ $("first-circuit-action").onclick = () => {
       respond(engine.buyTech("parity"), "Correcteur débloqué.", "research");
       break;
     case "build": {
-      const { generator, modem } = guide;
-      const x = Math.round((generator.x + modem.x) / 2);
-      const y = Math.round((generator.y + modem.y) / 2);
-      const occupied = engine.state.nodes.some((node) => node.x === x && node.y === y);
-      const result = occupied ? engine.addNode("corrector") : engine.addNode("corrector", x, y);
+      const result = engine.addNode("generator");
       if (respond(result, "Correcteur installé.", "connect")) {
-        renderer.burst(result.node.id, def("corrector").color);
+        renderer.burst(result.node.id, def("generator").color);
         updateFirstCircuit();
         renderer.fit();
       }
       break;
     }
+    case "generator":
+    case "lab":
+      if (respond(engine.upgradeNode(guide.node), "Module amélioré.", "research"))
+        renderer.burst(guide.node);
+      break;
     case "done":
       engine.state.tutorial = 0;
       persist();
