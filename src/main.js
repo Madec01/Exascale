@@ -9,6 +9,7 @@ import {
 import { Engine } from "./engine.js";
 import { Renderer } from "./renderer.js";
 import { AudioEngine } from "./audio.js";
+import { firstCircuit } from "./first-circuit.js";
 import {
   saveGame,
   loadGame,
@@ -52,16 +53,22 @@ engine.state.settings = {
   speed: 1,
   ...engine.state.settings,
 };
-if (!saved && innerWidth <= 700)
-  engine.state.nodes.forEach((n, i) => {
-    n.x = 0;
-    n.y = i;
-  });
-else if (!saved && innerHeight <= 550)
-  engine.state.nodes.forEach((n, i) => {
-    n.x = i;
-    n.y = 0;
-  });
+function positionStarterModules() {
+  if (innerWidth <= 700)
+    engine.state.nodes.forEach((node, index) => {
+      node.x = 0;
+      node.y = index;
+    });
+  else if (innerHeight <= 550)
+    engine.state.nodes.forEach((node, index) => {
+      node.x = index;
+      node.y = 0;
+    });
+}
+if (!saved) {
+  positionStarterModules();
+  engine.state.tutorial = 1;
+}
 const audio = new AudioEngine();
 let offline = { seconds: 0 };
 try {
@@ -180,6 +187,7 @@ function respond(result, fallback, sound) {
   notify(result?.message || fallback);
   if (sound) audio.play(sound);
   haptic();
+  if (engine.state.tutorial === 1) persist();
   uiDirty = true;
   return true;
 }
@@ -210,9 +218,14 @@ function persist(quiet = true) {
 function occlude() {
   const panel = $("panel");
   const rect = panel.getBoundingClientRect();
+  const mission = $("mission");
+  const tutorialBottom = !activePanel && innerWidth <= 700 &&
+    mission.classList.contains("first-circuit-active")
+    ? mission.offsetHeight + 42
+    : 0;
   renderer.setOcclusion?.({
     right: activePanel && innerWidth > 700 ? rect.width + 34 : 0,
-    bottom: activePanel && innerWidth <= 700 ? rect.height : 0,
+    bottom: activePanel && innerWidth <= 700 ? rect.height : tutorialBottom,
   });
 }
 function openPanel(name) {
@@ -691,6 +704,120 @@ function updateAffordability() {
       b.disabled = engine.researchStatus?.(b.dataset.id)?.ok === false;
     });
 }
+const firstCircuitInstructions = {
+  "remove-sales": [1, "Détournez les données vers le labo",
+    "Sélectionnez le câble surligné, puis choisissez « Retirer le câble ». La sortie du générateur ne peut servir qu’à une destination."],
+  "wire-lab": [1, "Alimentez le labo",
+    "Touchez les deux ports surlignés dans l’ordre : sortie du générateur, puis entrée du labo."],
+  earn: [1, "Accumulez 30 points de recherche",
+    "Le labo transforme les données en recherche. Les ventes reprendront quand vous reconnecterez le modem."],
+  research: [2, "Débloquez le correcteur",
+    "Le contrôle de parité permet de construire un module qui double la valeur des données."],
+  build: [2, "Installez le correcteur",
+    "Ajoutez un correcteur au circuit. Vous allez le relier entre le générateur et le modem."],
+  "remove-source": [2, "Libérez la sortie du générateur",
+    "Sélectionnez le câble surligné, puis choisissez « Retirer le câble »."],
+  "wire-corrector": [2, "Alimentez le correcteur",
+    "Touchez la sortie surlignée du générateur, puis l’entrée du correcteur."],
+  "remove-output": [2, "Libérez la sortie du correcteur",
+    "Sélectionnez le câble surligné, puis choisissez « Retirer le câble »."],
+  "wire-modem": [2, "Reprenez les ventes",
+    "Touchez la sortie surlignée du correcteur, puis l’entrée du modem."],
+  "wait-sales": [3, "Les données arrivent au modem",
+    "Le modem va vendre les premières données passées par le correcteur."],
+  done: [3, "Ventes doublées",
+    "Votre circuit est passé de 1 à 2 crédits par seconde. Accumulez 500 crédits pour accéder au Réseau local."],
+  restore: [1, "Reconstituez le circuit",
+    "Le tutoriel utilise un générateur, un labo et un modem. Vous pouvez ajouter le module manquant ou passer le tutoriel."],
+};
+
+function updateFirstCircuit() {
+  let guide = $("onboarding").hidden ? firstCircuit(engine.state) : null;
+  if (guide?.step === "success") {
+    engine.state.tutorial = 2;
+    persist();
+    guide = { step: "done" };
+  }
+  renderer.circuitGuide = guide;
+  const card = $("first-circuit");
+  const previousHeight = card.offsetHeight;
+  const wasHidden = card.hidden;
+  card.hidden = !guide;
+  $("mission-toggle").hidden = !!guide;
+  $("mission-track").hidden = !!guide;
+  $("mission").classList.toggle("first-circuit-active", !!guide);
+  if (guide) {
+    const { step } = guide;
+    const [number, title, instruction] = firstCircuitInstructions[step];
+    const updateText = (id, value) => {
+      const element = $(id);
+      if (element.textContent !== value) element.textContent = value;
+    };
+    updateText("first-circuit-step", `Premier objectif · ${number}/3`);
+    updateText("first-circuit-title", title);
+    updateText("first-circuit-instruction", instruction);
+    const { rp, stats, credits } = engine.state;
+    let progress = "";
+    if (step === "earn") {
+      const rate = paused ? "simulation en pause" : `+${num(stats.rpRate)} /s`;
+      progress = `${Math.floor(rp)} / 30 points · ${rate} · ventes en pause`;
+    } else if (step === "done") {
+      progress = `${num(credits)} / 500 crédits`;
+    } else if (step === "wait-sales" && paused) {
+      progress = "Reprenez la simulation pour voir les ventes.";
+    }
+    updateText("first-circuit-progress", progress);
+    $("first-circuit-progress").hidden = !progress;
+    const action = {
+      research: "Rechercher le contrôle de parité · 30 points",
+      build: `Ajouter le correcteur · ${num(constructionCost(def("corrector")))} crédits`,
+      done: "Voir l’objectif de l’ère",
+      restore: "Ouvrir les modules",
+    }[step];
+    updateText("first-circuit-action", action || "");
+    $("first-circuit-action").hidden = !action;
+    $("first-circuit-skip").hidden = step === "done";
+  }
+  if (wasHidden !== card.hidden || previousHeight !== card.offsetHeight) occlude();
+}
+
+$("first-circuit-skip").onclick = () => {
+  engine.state.tutorial = 0;
+  updateFirstCircuit();
+  persist();
+};
+
+$("first-circuit-action").onclick = () => {
+  const guide = firstCircuit(engine.state);
+  switch (guide?.step) {
+    case "research":
+      respond(engine.buyTech("parity"), "Correcteur débloqué.", "research");
+      break;
+    case "build": {
+      const { generator, modem } = guide;
+      const x = Math.round((generator.x + modem.x) / 2);
+      const y = Math.round((generator.y + modem.y) / 2);
+      const occupied = engine.state.nodes.some((node) => node.x === x && node.y === y);
+      const result = occupied ? engine.addNode("corrector") : engine.addNode("corrector", x, y);
+      if (respond(result, "Correcteur installé.", "connect")) {
+        renderer.burst(result.node.id, def("corrector").color);
+        updateFirstCircuit();
+        renderer.fit();
+      }
+      break;
+    }
+    case "done":
+      engine.state.tutorial = 0;
+      persist();
+      openPanel("goals");
+      break;
+    case "restore":
+      openPanel("build");
+      break;
+  }
+  updateFirstCircuit();
+};
+
 function updateHUD() {
   const s = engine.state,
     st = stageDef(),
@@ -748,6 +875,7 @@ function updateHUD() {
   $("mission-percent").textContent = Math.floor(ratio * 100) + "%";
   $("mission-fill").style.width = ratio * 100 + "%";
   $("mission").classList.toggle("ready", ratio >= 1);
+  updateFirstCircuit();
   $("grid-status").textContent = paused
     ? "SIMULATION EN PAUSE"
     : renderer.pendingPort
@@ -901,6 +1029,9 @@ function performAction(action, id) {
         "Cette action remplace votre partie locale et efface ses modèles fondateurs. Exportez-la avant de confirmer si vous souhaitez la conserver.",
         () => {
           engine.state = new Engine().state;
+          positionStarterModules();
+          engine.state.tutorial = 1;
+          $("onboarding").hidden = false;
           audio.configure(engine.state.settings);
           selected = null;
           renderer.selection = null;
@@ -1069,6 +1200,7 @@ $("import-file").addEventListener("change", async (event) => {
       `Votre partie locale sera remplacée par cette sauvegarde de l’ère ${imported.stage}.`,
       () => {
         engine.state = new Engine(imported).state;
+        $("onboarding").hidden = true;
         paused = !!engine.state.paused;
         selected = null;
         renderer.selection = null;
@@ -1086,15 +1218,18 @@ $("import-file").addEventListener("change", async (event) => {
   }
   event.target.value = "";
 });
-$("start-game").onclick = () => {
+function startFirstCircuit() {
   $("onboarding").hidden = true;
   engine.state.onboardingDone = true;
+  engine.state.tutorial = 1;
+  updateFirstCircuit();
   audio.unlock();
   renderer.fit();
   persist();
-  notify("Touchez un module pour inspecter son activité.");
-};
-if (!saved && !engine.state.onboardingDone) $("onboarding").hidden = false;
+}
+$("start-game").onclick = startFirstCircuit;
+if (!engine.state.onboardingDone && (!saved || engine.state.tutorial === 1))
+  $("onboarding").hidden = false;
 document.addEventListener("touchstart", () => audio.unlock(), {
   once: true,
   passive: true,
@@ -1109,7 +1244,7 @@ window.addEventListener("keydown", (event) => {
   }
   if (["INPUT", "SELECT", "TEXTAREA"].includes(event.target.tagName)) return;
   if (event.code === "Escape") {
-    $("onboarding").hidden = true;
+    if (!$("onboarding").hidden) startFirstCircuit();
     renderer.pendingPort = null;
     closePanel();
   } else if (event.code === "Space" && !event.target.closest("button")) {
@@ -1218,8 +1353,8 @@ function frame(now) {
 }
 requestAnimationFrame(() => {
   renderer.resize();
-  renderer.fit();
   updateHUD();
+  renderer.fit();
   requestAnimationFrame(frame);
 });
 if (offline.seconds > 30)

@@ -1077,12 +1077,6 @@ input[type="range"] {
   z-index: 12;
   animation: panel-in 0.3s;
 }
-.intro-number {
-  font-size: 8px;
-  letter-spacing: 1.8px;
-  color: var(--cyan);
-  margin-bottom: 18px;
-}
 .onboarding h2 {
   font-family: var(--sans);
   font-size: 31px;
@@ -1099,18 +1093,6 @@ input[type="range"] {
   color: #a9bbc7;
   line-height: 1.8;
   margin: 0 0 20px;
-}
-.intro-steps {
-  display: flex;
-  flex-direction: column;
-  gap: 11px;
-  font-size: 10px;
-  margin-bottom: 25px;
-}
-.intro-steps b {
-  font-weight: 400;
-  color: var(--cyan);
-  margin-right: 10px;
 }
 .onboarding .primary-button {
   width: 100%;
@@ -1563,15 +1545,6 @@ body.has-panel .connection-hint {
     font-size: 10px;
     margin-bottom: 14px;
   }
-  .intro-number {
-    margin-bottom: 12px;
-    font-size: 7px;
-  }
-  .intro-steps {
-    font-size: 9px;
-    gap: 10px;
-    margin-bottom: 19px;
-  }
   .onboarding small {
     font-size: 7px;
   }
@@ -1725,12 +1698,6 @@ body.has-panel .connection-hint {
   .onboarding p {
     margin-bottom: 12px;
   }
-  .intro-number {
-    margin-bottom: 10px;
-  }
-  .intro-steps {
-    display: none;
-  }
   body.has-panel .canvas-controls {
     right: 350px;
   }
@@ -1819,5 +1786,69 @@ body.has-panel .connection-hint {
   }
   .locked-label {
     font-size: 10px;
+  }
+}
+
+.mission.first-circuit-active {
+  border-color: #7d6946;
+}
+
+#first-circuit {
+  padding: 8px 12px 12px;
+  color: #ecf3ef;
+}
+
+.first-circuit-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 34px;
+}
+
+.first-circuit-heading .eyebrow {
+  color: #ffe19a;
+}
+
+#first-circuit-skip {
+  min-height: 44px;
+  min-width: 44px;
+  font-size: 11px;
+  text-decoration: underline;
+}
+
+#first-circuit h2 {
+  margin: 0 0 5px;
+  font-size: 15px;
+  line-height: 1.2;
+}
+
+#first-circuit p {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+#first-circuit-progress {
+  padding-top: 6px;
+  color: var(--cyan);
+}
+
+#first-circuit-action {
+  margin-top: 8px;
+  min-height: 44px;
+  width: 100%;
+  white-space: normal;
+}
+
+@media (max-width: 700px) {
+  .mission.first-circuit-active {
+    width: calc(100% - 121px);
+    min-width: 0;
+  }
+
+  body:not(.has-panel) .first-circuit-active ~ .connection-hint {
+    top: 61px;
+    bottom: auto;
   }
 }

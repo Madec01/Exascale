@@ -165,6 +165,7 @@ export function parseSave(text) {
   ]);
   if (state.hardware !== undefined)
     integer(state.hardware, 0, 4, "Niveau matériel");
+  if (state.tutorial !== undefined) integer(state.tutorial, 0, 2, "Tutoriel");
   if (state.sandbox !== undefined) boolean(state.sandbox, "Mode sandbox");
   for (const key of ["paused", "onboardingDone"])
     if (state[key] !== undefined) boolean(state[key], key);
