@@ -936,6 +936,14 @@ export class Renderer {
       z = this.camera.zoom,
       u = clamp(val(e.load), 0, 1.1),
       selected = this.selection?.kind === "edge" && this.selection.id === e.id;
+    if (this.circuitGuide?.edge === e.id) {
+      this._trace(p);
+      c.strokeStyle = "#FFE19A";
+      c.globalAlpha = 0.75;
+      c.lineWidth = 11 / z;
+      c.stroke();
+      c.globalAlpha = 1;
+    }
     const kind = e.kind || "data",
       color =
         kind === "power"
@@ -1304,6 +1312,13 @@ export class Renderer {
         c.fill();
         c.strokeStyle = CYAN;
         c.lineWidth = 1 / z;
+        c.stroke();
+      }
+      if (this.circuitGuide?.[side === "out" ? "from" : "to"] === n.id) {
+        c.beginPath();
+        c.arc(p.x, p.y, 12 / z, 0, TAU);
+        c.strokeStyle = "#FFE19A";
+        c.lineWidth = 2 / z;
         c.stroke();
       }
       const receiving = side === "in" ? val(n.inRate) > 0 : val(n.outRate) > 0;

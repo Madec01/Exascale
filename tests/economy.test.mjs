@@ -63,6 +63,32 @@ test("R&D par câblage et mono-sortie étape 1", () => {
   assert.ok(e.buyTech("huffman").ok);
   assert.equal(e.available("compressor"), true);
 });
+test("ère 1 : les deux branches progressent et chaque niveau déplace le goulot", () => {
+  const e = new Engine();
+  const [sales, modem, lab] = e.state.nodes;
+  const research = add(e, "generator");
+  wire(e, research, lab);
+  const rates = (credits, rp) => {
+    run(e, 3);
+    assert.ok(Math.abs(e.state.stats.creditsRate - credits) < 0.001);
+    assert.ok(Math.abs(e.state.stats.rpRate - rp) < 0.001);
+  };
+  const upgrade = (node) => assert.ok(e.upgradeNode(node.id).ok);
+  rates(1, 1);
+  upgrade(research);
+  rates(1, 1);
+  upgrade(lab);
+  rates(1, 2);
+  assert.ok(!e.advance().ok);
+  run(e, 12);
+  assert.ok(e.buyTech("parity").ok);
+  upgrade(sales);
+  rates(1, 2);
+  upgrade(modem);
+  rates(2, 2);
+  run(e, 130);
+  assert.ok(e.advance().ok);
+});
 test("poids 3:1 sans duplication : 75 % vente, 25 % RP", () => {
   const e = blank(2);
   const gen = add(e, "generator"),
@@ -286,6 +312,7 @@ test("bus interne PC : compression augmente vraiment les ventes et RAM partagée
     c = add(e, "corrector"),
     z = add(e, "compressor"),
     m = add(e, "modem");
+  g.level = 2;
   g.allocation = 2;
   c.allocation = 3;
   z.allocation = 4;
@@ -293,7 +320,7 @@ test("bus interne PC : compression augmente vraiment les ventes et RAM partagée
   wire(e, c, z);
   wire(e, z, m);
   run(e, 20);
-  assert.ok(e.state.stats.creditsRate >= 4.99);
+  assert.ok(e.state.stats.creditsRate >= 3.99);
   assert.equal(e.state.edges[0].capacity, 500);
   assert.equal(e.state.edges[2].capacity, 100);
   assert.ok(e.state.nodes.reduce((s, n) => s + n.buffer, 0) <= 500.001);

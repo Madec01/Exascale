@@ -1,6 +1,6 @@
 # EXASCALE
 
-**Architectures de l’émergence.** Un jeu incrémental de réseaux, de calcul et de conscience, écrit en JavaScript natif et Canvas 2D. D’un PC de 10 Hz à un réseau planétaire, chaque progression vient des données que vous acheminez réellement.
+**Architectures de l’émergence.** Un jeu incrémental de réseaux, de calcul et de conscience, écrit en JavaScript natif et Canvas 2D. D’un PC de 20 Hz à un réseau planétaire, chaque progression vient des données que vous acheminez réellement.
 
 Version 1.0.0 · Interface française · Hébergement statique · Aucun compte, serveur applicatif, service distant ou dépendance chargée en jeu.
 
@@ -28,13 +28,20 @@ Aucun `npm install`, bundler ou compilation n’est nécessaire. Tous les chemin
 
 Référence : [documentation GitHub Pages](https://docs.github.com/en/pages/getting-started-with-github-pages/configuring-a-publishing-source-for-your-github-pages-site).
 
+## Installer sur un téléphone
+
+Ouvrez le jeu à son adresse HTTPS, puis choisissez **Paramètres → Installer sur cet appareil**. Sur Android, Chrome ouvre la confirmation d’installation quand elle est disponible. Sur iPhone, utilisez **Safari → Partager → Sur l’écran d’accueil**, activez **Ouvrir comme app web** si l’option apparaît, puis touchez **Ajouter**.
+
+Après un premier chargement en ligne complet, le jeu peut s’ouvrir hors connexion. Si votre partie n’apparaît pas dans l’application installée, utilisez **Exporter JSON** dans le navigateur puis **Importer JSON** dans l’application.
+
+Pour publier une mise à jour du jeu ou de ses ressources, incrémentez la révision du cache dans `sw.js`. Le nouveau cache prend le relais quand les anciennes fenêtres du jeu sont fermées.
+
 ## Les premières minutes
 
-- Inspectez le générateur : le CPU produit plus de données que le câble série de 100 o/s ne peut en vendre. Le buffer et la couleur du câble rendent cette contrainte visible.
-- Touchez le câble, choisissez **Retirer**, puis reliez la sortie du générateur à l’entrée du laboratoire. À l’ère 1, une sortie ne peut avoir qu’une destination.
-- Consacrez des données à **Contrôle de parité**, **Compression Huffman** et **Overclocking basique**. La recherche vient exclusivement des données traitées par un laboratoire.
-- Construisez un correcteur et un compresseur. Réorganisez la chaîne, puis rétablissez la vente. Le correcteur augmente la valeur, le compresseur réduit la taille ; leurs cycles CPU se partagent avec le générateur.
-- Touchez la carte **Prochaine évolution** pour améliorer le matériel et consulter les objectifs. Le passage d’ère est volontaire ; les seuils de ressources ne sont pas débités lors de la transition. Les crédits sont abandonnés au passage à l’ère 9, où les achats utilisent la néguentropie.
+- Gardez le générateur de départ relié au modem. Ajoutez un deuxième générateur et reliez sa sortie à l’entrée du labo. Les deux circuits fonctionnent en parallèle.
+- Montez le générateur de recherche puis son labo au niveau 2 pour passer de 1 à 2 points de recherche par seconde. Dans l’inspecteur, l’aperçu compare le débit du circuit avant et après chaque amélioration.
+- Débloquez **Contrôle de parité** pour installer un correcteur entre le générateur de vente et le modem. Vous pouvez aussi monter le générateur et le modem pour vendre plus de textes.
+- Pour accéder au Réseau local, réunissez 250 crédits, gardez les ventes et la recherche actives, puis améliorez un générateur et un modem ou un labo. La transition est volontaire et conserve les ressources, sauf les crédits lors du passage à l’ère 9.
 
 ## Commandes
 
@@ -59,7 +66,7 @@ Les cibles de ports conservent une surface de 44 × 44 pixels écran, même en d
 
 | Ère                     | Nouvelle contrainte                                | Objectif principal                                      |
 | ----------------------- | -------------------------------------------------- | ------------------------------------------------------- |
-| 1 — Poste isolé         | CPU global, câble 100 o/s, 500 o de RAM            | 500 crédits                                             |
+| 1 — Poste isolé         | CPU global, ports évolutifs, 500 o de RAM            | 250 crédits, deux flux actifs et deux nœuds améliorés   |
 | 2 — Réseau local        | Routage pondéré, archives et reconstruction        | 15 000 crédits + 500 RP                                 |
 | 3 — Salle serveur       | 15 % de corruption, quarantaines de 10 s           | 500 000 crédits                                         |
 | 4 — Datacenter          | Énergie, refroidissement, bridage au-delà de 65 °C | 25 M crédits + 10 Go archivés                           |

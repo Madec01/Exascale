@@ -71,7 +71,17 @@ export function campaign(verbose = false) {
       );
     checked(e.advance());
   };
-  // 1. The initial 100-o/s modem earns every credit used later.
+  // 1. Finance the first upgrades while the second generator feeds research.
+  const [starter, modem, starterLab] = e.state.nodes;
+  const researchSource = add("generator");
+  wire(researchSource, starterLab);
+  upgrade(researchSource, 2);
+  upgrade(starterLab, 2);
+  tech("parity");
+  const corrector = add("corrector");
+  unlink(starter);
+  wire(starter, corrector);
+  wire(corrector, modem);
   advance();
   // 2. Two archive pipelines; route one temporarily to R&D for genuine RP.
   clear();

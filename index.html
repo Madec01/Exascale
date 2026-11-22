@@ -13,6 +13,8 @@
     />
     <title>EXASCALE — Architectures de l'émergence</title>
     <link rel="icon" type="image/svg+xml" href="./assets/img/exascale.svg" />
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <link rel="apple-touch-icon" sizes="180x180" href="./assets/img/icon-180.png" />
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
@@ -161,7 +163,19 @@
                 ><span id="mission-title">Le premier réseau</span></span
               ><span id="mission-percent">0%</span>
             </button>
-            <div class="mission-track"><div id="mission-fill"></div></div>
+            <div class="mission-track" id="mission-track"><div id="mission-fill"></div></div>
+            <section id="first-circuit" aria-label="Premier objectif" hidden>
+              <div class="first-circuit-heading">
+                <span class="eyebrow" id="first-circuit-step"></span>
+                <button id="first-circuit-skip" aria-label="Passer le tutoriel">Passer</button>
+              </div>
+              <div role="status">
+                <h2 id="first-circuit-title"></h2>
+                <p id="first-circuit-instruction"></p>
+              </div>
+              <p id="first-circuit-progress"></p>
+              <button id="first-circuit-action" class="small-button" hidden></button>
+            </section>
           </div>
           <div class="layer-bar" id="layer-bar" hidden>
             <button data-layer="data" class="active">Réseau</button
@@ -233,17 +247,12 @@
             <div id="panel-body" class="panel-body"></div>
           </aside>
           <div id="onboarding" class="onboarding" hidden>
-            <div class="intro-number">PROTOCOLE D’AMORÇAGE / 001</div>
-            <h2>Tout commence<br />par un octet<span>.</span></h2>
+            <h2>Lancez les ventes et la recherche<span>.</span></h2>
             <p>
-              Votre premier PC écrit. Le modem vend ses données. À vous de
-              dessiner le réseau qui apprendra à penser.
+              Votre premier générateur alimente déjà le modem. Construisez-en un
+              deuxième pour la recherche, puis améliorez le réseau pour faire
+              tourner les deux circuits ensemble.
             </p>
-            <div class="intro-steps">
-              <span><b>01</b> Connectez vos modules</span
-              ><span><b>02</b> Réservez des données à la recherche</span
-              ><span><b>03</b> Faites émerger l’intelligence</span>
-            </div>
             <button id="start-game" class="primary-button">
               Prendre les commandes <span>↗</span></button
             ><small>Progression sauvegardée sur cet appareil.</small>
@@ -267,6 +276,15 @@
             ><button value="confirm" id="confirm-yes" class="primary-button">
               Confirmer
             </button>
+          </div>
+        </form>
+      </dialog>
+      <dialog id="install-dialog" aria-labelledby="install-title">
+        <form method="dialog">
+          <h2 id="install-title">Installer EXASCALE</h2>
+          <p id="install-instructions"></p>
+          <div class="dialog-actions">
+            <button class="primary-button">Fermer</button>
           </div>
         </form>
       </dialog>

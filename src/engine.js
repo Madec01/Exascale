@@ -443,18 +443,21 @@ export class Engine {
   nodeCost(type) {
     const d = NODE_TYPES[type];
     if (!d) return { cost: Infinity, currency: "credits" };
+    const cost = this.state.stage === 1 && type === "corrector" ? 35 : d.cost;
     return this.state.stage === 9
       ? {
           cost: d.stage === 9 ? d.cost : Math.max(2, Math.ceil(d.cost / 1e7)),
           currency: "ne",
         }
-      : { cost: d.cost, currency: "credits" };
+      : { cost, currency: "credits" };
   }
   nodeUpgradeCost(id) {
     const n = this.state.nodes.find((a) => a.id === id);
     if (!n) return { cost: Infinity, currency: "credits" };
     const price = this.nodeCost(n.type);
-    return { cost: price.cost * 2 ** (n.level - 1), currency: price.currency };
+    const starterCost = { generator: 15, modem: 20, lab: 20 };
+    const base = this.state.stage === 1 ? (starterCost[n.type] ?? price.cost) : price.cost;
+    return { cost: base * 2 ** (n.level - 1), currency: price.currency };
   }
   hardwareCost() {
     return (
@@ -517,7 +520,7 @@ export class Engine {
     return ok();
   }
   _cpu() {
-    if (this.state.stage === 1) return 10 + this.state.hardware * 10;
+    if (this.state.stage === 1) return this.stage.cpu + (this.stage.cpuMax - this.stage.cpu) * this.state.hardware / 4;
     return (
       this.stage.cpu *
       (this.stage.cpuMax / this.stage.cpu) ** (this.state.hardware / 4) *
@@ -543,7 +546,8 @@ export class Engine {
         : Math.min(5000, 500 * 2 ** (a.level - 1));
     if (kind === "cooling") return 150 * 2 ** (a.level - 1);
     let v = this.stage.bandwidth;
-    if (this.state.stage === 1 && !["modem", "lab"].includes(b.type)) v = 500;
+    if (this.state.stage === 1)
+      v = ["modem", "lab"].includes(b.type) ? v * 2 ** (b.level - 1) : 500;
     if (this.state.stage === 3 && !this.has("fiber")) v = 1000;
     if (this.state.stage === 5 && !this.has("infiniband")) v = 1e7;
     if (
@@ -793,7 +797,9 @@ export class Engine {
     if (n.type === "generator" || n.type === "founder") {
       const size = n.type === "founder" ? 80 : 100,
         value = n.type === "founder" ? 3 : 1;
-      cap = (n.cpuAllocated / 2) * size * f;
+      const cpuLimit = n.cpuAllocated / 2;
+      const textLimit = s.stage === 1 && n.type === "generator" ? lev : Infinity;
+      cap = Math.min(cpuLimit, textLimit) * size * f;
       units = (cap * dt) / size;
       p = packet("text", size, units, value, value, zone);
       n._cpuUsed = (units * 2) / dt;
@@ -1534,7 +1540,13 @@ export class Engine {
         ratio: clamp(value / target),
       });
     return {
-      1: [m("Crédits", s.credits, 500)],
+      1: [
+        m("Crédits", s.credits, 250),
+        m("Ventes actives", Number(st.creditsRate > 0), 1),
+        m("Recherche active", Number(st.rpRate > 0), 1),
+        m("Générateur amélioré", Number(s.nodes.some((n) => n.type === "generator" && n.level > 1)), 1),
+        m("Modem ou labo amélioré", Number(s.nodes.some((n) => ["modem", "lab"].includes(n.type) && n.level > 1)), 1),
+      ],
       2: [m("Crédits", s.credits, 15000), m("Recherche disponible", s.rp, 500)],
       3: [m("Crédits", s.credits, 500000)],
       4: [
