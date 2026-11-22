@@ -9,6 +9,7 @@ import {
 import { Engine } from "./engine.js";
 import { Renderer } from "./renderer.js";
 import { AudioEngine } from "./audio.js";
+import { installApp, installationButton } from "./installation.js";
 import { firstCircuit } from "./first-circuit.js";
 import {
   saveGame,
@@ -552,7 +553,7 @@ function renderSettings() {
   setPanel(
     "Le poste de contrôle",
     "PRÉFÉRENCES & SAUVEGARDE",
-    `<div class="section-label">AMBIANCE <img src="./assets/img/audioOn.png" width="18" height="18" alt=""></div>${[
+    `${installationButton()}<div class="section-label">AMBIANCE <img src="./assets/img/audioOn.png" width="18" height="18" alt=""></div>${[
       ["music", "Musique générative", "Une nappe évolutive, discrète."],
       ["sfx", "Sons d’interface", "Connexions, découvertes et alertes."],
       ["mute", "Couper tous les sons", "Prioritaire sur Musique et SFX."],
@@ -1015,6 +1016,9 @@ function performAction(action, id) {
       notify("Sauvegarde JSON exportée.");
       break;
     }
+    case "install-app":
+      void installApp();
+      break;
     case "import":
       $("import-file").click();
       break;
@@ -1236,6 +1240,7 @@ document.addEventListener("touchstart", () => audio.unlock(), {
 });
 document.addEventListener("pointerdown", () => audio.unlock(), { once: true });
 window.addEventListener("keydown", (event) => {
+  if ($("install-dialog").open) return;
   if (event.ctrlKey && event.shiftKey && event.code === "KeyD") {
     event.preventDefault();
     debugOpen = !debugOpen;

@@ -13,6 +13,8 @@
     />
     <title>EXASCALE — Architectures de l'émergence</title>
     <link rel="icon" type="image/svg+xml" href="./assets/img/exascale.svg" />
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <link rel="apple-touch-icon" sizes="180x180" href="./assets/img/icon-180.png" />
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
@@ -274,6 +276,15 @@
             ><button value="confirm" id="confirm-yes" class="primary-button">
               Confirmer
             </button>
+          </div>
+        </form>
+      </dialog>
+      <dialog id="install-dialog" aria-labelledby="install-title">
+        <form method="dialog">
+          <h2 id="install-title">Installer EXASCALE</h2>
+          <p id="install-instructions"></p>
+          <div class="dialog-actions">
+            <button class="primary-button">Fermer</button>
           </div>
         </form>
       </dialog>

@@ -28,6 +28,14 @@ Aucun `npm install`, bundler ou compilation n’est nécessaire. Tous les chemin
 
 Référence : [documentation GitHub Pages](https://docs.github.com/en/pages/getting-started-with-github-pages/configuring-a-publishing-source-for-your-github-pages-site).
 
+## Installer sur un téléphone
+
+Ouvrez le jeu à son adresse HTTPS, puis choisissez **Paramètres → Installer sur cet appareil**. Sur Android, Chrome ouvre la confirmation d’installation quand elle est disponible. Sur iPhone, utilisez **Safari → Partager → Sur l’écran d’accueil**, activez **Ouvrir comme app web** si l’option apparaît, puis touchez **Ajouter**.
+
+Après un premier chargement en ligne complet, le jeu peut s’ouvrir hors connexion. Si votre partie n’apparaît pas dans l’application installée, utilisez **Exporter JSON** dans le navigateur puis **Importer JSON** dans l’application.
+
+Pour publier une mise à jour du jeu ou de ses ressources, incrémentez la révision du cache dans `sw.js`. Le nouveau cache prend le relais quand les anciennes fenêtres du jeu sont fermées.
+
 ## Les premières minutes
 
 - Inspectez le générateur : le CPU produit plus de données que le câble série de 100 o/s ne peut en vendre. Le buffer et la couleur du câble rendent cette contrainte visible.
