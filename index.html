@@ -1,0 +1,286 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#090D14" />
+    <meta
+      name="description"
+      content="EXASCALE — Du premier octet à la conscience générale. Un jeu de réseaux, de calcul et d'émergence, sans serveur."
+    />
+    <title>EXASCALE — Architectures de l'émergence</title>
+    <link rel="icon" type="image/svg+xml" href="./assets/img/exascale.svg" />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div id="app">
+      <header class="masthead">
+        <div class="brand">
+          <svg class="brand-mark" viewBox="0 0 40 40" aria-hidden="true">
+            <path d="M7 5h15l11 11v19H18L7 24z" />
+            <path d="M12 13h11l5 5v9H17l-5-5zM7 5l26 30M7 24l15-19" />
+          </svg>
+          <div>
+            <h1>EXASCALE<span class="brand-dot">.</span></h1>
+            <span class="tagline">ARCHITECTURES DE L’ÉMERGENCE</span>
+          </div>
+        </div>
+        <div class="session-label">
+          <span class="live-dot"></span
+          ><span id="session-status">SYSTÈME EN LIGNE</span
+          ><span class="divider">/</span><span id="clock">00:00:00</span>
+        </div>
+        <div class="header-controls">
+          <button
+            id="audio-toggle"
+            class="icon-button"
+            aria-label="Activer ou couper le son"
+            title="Son"
+          >
+            ♪</button
+          ><button
+            id="pause-toggle"
+            class="icon-button"
+            aria-label="Mettre en pause"
+            title="Pause"
+          >
+            Ⅱ</button
+          ><button
+            id="settings-top"
+            class="icon-button"
+            aria-label="Paramètres"
+            title="Paramètres"
+          >
+            <svg viewBox="0 0 24 24">
+              <path d="M4 7h16M4 17h16M8 4v6M16 14v6" />
+            </svg>
+          </button>
+        </div>
+      </header>
+      <section class="resource-strip" aria-label="Ressources du réseau">
+        <div class="resource primary">
+          <span class="resource-symbol">◈</span>
+          <div>
+            <span class="eyebrow" id="primary-label">CRÉDITS</span
+            ><strong id="credits">0</strong>
+          </div>
+          <span class="rate" id="credits-rate">+0 /s</span>
+        </div>
+        <div class="resource">
+          <span class="resource-symbol science">⌬</span>
+          <div>
+            <span class="eyebrow">RECHERCHE</span
+            ><strong id="rp">0 <small>RP</small></strong>
+          </div>
+          <span class="rate" id="rp-rate">+0 /s</span>
+        </div>
+        <div class="resource desktop-resource">
+          <div>
+            <span class="eyebrow">CALCUL UTILISÉ</span
+            ><strong id="cpu">0<small>%</small></strong>
+          </div>
+          <span class="mini-bars" aria-hidden="true"
+            ><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i
+          ></span>
+        </div>
+        <div class="resource desktop-resource">
+          <div>
+            <span class="eyebrow" id="fourth-label">FLUX RÉSEAU</span
+            ><strong id="throughput">0 <small>o/s</small></strong>
+          </div>
+          <span class="resource-symbol accent">↗</span>
+        </div>
+      </section>
+      <div class="workbench">
+        <nav class="main-nav" aria-label="Navigation principale">
+          <button
+            class="nav-button active"
+            data-panel="circuit"
+            title="Circuit"
+          >
+            <svg viewBox="0 0 24 24">
+              <path d="M3 4h6v6H3zM15 14h6v6h-6zM9 7h9v7M6 10v7h9" /></svg
+            ><span>Circuit</span>
+          </button>
+          <button class="nav-button" data-panel="build" title="Construire">
+            <svg viewBox="0 0 24 24">
+              <path
+                d="M5 5h14v14H5zM9 12h6M12 9v6M2 8h3M2 16h3M19 8h3M19 16h3M8 2v3M16 2v3M8 19v3M16 19v3"
+              /></svg
+            ><span>Modules</span>
+          </button>
+          <button class="nav-button" data-panel="research" title="Recherche">
+            <svg viewBox="0 0 24 24">
+              <path
+                d="M9 3h6M10 3v6L4 19v2h16v-2L14 9V3M7 15h10M10 18h.1"
+              /></svg
+            ><span>Recherche</span
+            ><span class="nav-dot" id="research-dot" hidden></span>
+          </button>
+          <button class="nav-button" data-panel="stats" title="Statistiques">
+            <svg viewBox="0 0 24 24">
+              <path d="M3 3v18h18M7 16v-4M12 16V7M17 16v-7" /></svg
+            ><span>Mesures</span>
+          </button>
+          <button class="nav-button help-nav" data-panel="help" title="Guide">
+            <svg viewBox="0 0 24 24">
+              <path
+                d="M4 4h7l1 2 1-2h7v16h-7l-1 1-1-1H4zM12 6v15M7 8h2M15 8h2M7 12h2M15 12h2"
+              /></svg
+            ><span>Guide</span>
+          </button>
+          <div class="nav-foot"><span>LOCAL</span><i class="live-dot"></i></div>
+        </nav>
+        <main id="workspace" aria-label="Grille de calcul EXASCALE">
+          <canvas
+            id="network"
+            tabindex="0"
+            aria-label="Circuit nodal interactif. Déplacez la grille par glissement. Touchez une sortie puis une entrée pour câbler. Les modules sont aussi accessibles dans le tiroir Mesures."
+            >Votre navigateur doit prendre en charge Canvas et
+            JavaScript.</canvas
+          >
+          <div class="world-heading">
+            <div>
+              <span class="eyebrow"
+                >TOPOLOGIE <b id="grid-label">04 × 04</b></span
+              ><span class="world-name" id="world-name">Poste isolé</span>
+            </div>
+            <span class="world-index" id="world-index">01<span>/09</span></span>
+          </div>
+          <div class="mission" id="mission">
+            <button
+              id="mission-toggle"
+              aria-label="Voir les objectifs de l’étape"
+            >
+              <span class="mission-icon">↗</span
+              ><span class="mission-copy"
+                ><span class="eyebrow">PROCHAINE ÉVOLUTION</span
+                ><span id="mission-title">Le premier réseau</span></span
+              ><span id="mission-percent">0%</span>
+            </button>
+            <div class="mission-track"><div id="mission-fill"></div></div>
+          </div>
+          <div class="layer-bar" id="layer-bar" hidden>
+            <button data-layer="data" class="active">Réseau</button
+            ><button data-layer="power">Énergie</button
+            ><button data-layer="cooling">Fluides</button
+            ><select id="zone-select" aria-label="Zone géographique" hidden>
+              <option value="all">Planète</option>
+              <option value="Europe">Europe</option>
+              <option value="America">Amérique</option>
+              <option value="Asia">Asie</option>
+              <option value="Orbit">Orbite LEO</option>
+            </select>
+          </div>
+          <div class="canvas-controls">
+            <button id="zoom-in" class="icon-button" aria-label="Zoom avant">
+              +</button
+            ><button
+              id="zoom-out"
+              class="icon-button"
+              aria-label="Zoom arrière"
+            >
+              −</button
+            ><button
+              id="fit-view"
+              class="icon-button"
+              aria-label="Centrer le réseau"
+              title="Centrer le réseau"
+            >
+              <svg viewBox="0 0 24 24">
+                <path
+                  d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5M8 12h8M12 8v8"
+                />
+              </svg>
+            </button>
+          </div>
+          <div class="grid-footer">
+            <span
+              ><i class="live-dot"></i
+              ><span id="grid-status">LIAISON ÉTABLIE</span></span
+            ><span id="fps-label">— Hz</span
+            ><span class="desktop-hint"
+              >GLISSER · EXPLORER <b> / </b> PORT → PORT · CONNECTER</span
+            >
+          </div>
+          <div id="connection-hint" class="connection-hint" hidden>
+            Sortie verrouillée · touchez une entrée
+            <button id="cancel-wire" aria-label="Annuler le câble">×</button>
+          </div>
+          <aside
+            id="panel"
+            class="panel"
+            hidden
+            aria-label="Panneau de contrôle"
+          >
+            <div class="sheet-grip" aria-hidden="true"></div>
+            <div class="panel-heading">
+              <div>
+                <span id="panel-kicker" class="eyebrow">ATELIER DU RÉSEAU</span>
+                <h2 id="panel-title">Modules</h2>
+              </div>
+              <button
+                id="close-panel"
+                class="icon-button"
+                aria-label="Fermer le panneau"
+              >
+                ×
+              </button>
+            </div>
+            <div id="panel-body" class="panel-body"></div>
+          </aside>
+          <div id="onboarding" class="onboarding" hidden>
+            <div class="intro-number">PROTOCOLE D’AMORÇAGE / 001</div>
+            <h2>Tout commence<br />par un octet<span>.</span></h2>
+            <p>
+              Votre premier PC écrit. Le modem vend ses données. À vous de
+              dessiner le réseau qui apprendra à penser.
+            </p>
+            <div class="intro-steps">
+              <span><b>01</b> Connectez vos modules</span
+              ><span><b>02</b> Réservez des données à la recherche</span
+              ><span><b>03</b> Faites émerger l’intelligence</span>
+            </div>
+            <button id="start-game" class="primary-button">
+              Prendre les commandes <span>↗</span></button
+            ><small>Progression sauvegardée sur cet appareil.</small>
+          </div>
+        </main>
+      </div>
+      <div
+        id="toast"
+        class="toast"
+        role="status"
+        aria-live="polite"
+        hidden
+      ></div>
+      <dialog id="confirm-dialog">
+        <form method="dialog">
+          <span class="eyebrow">EXASCALE / CONFIRMATION</span>
+          <h2 id="confirm-title"></h2>
+          <p id="confirm-text"></p>
+          <div class="dialog-actions">
+            <button value="cancel" class="secondary-button">Annuler</button
+            ><button value="confirm" id="confirm-yes" class="primary-button">
+              Confirmer
+            </button>
+          </div>
+        </form>
+      </dialog>
+      <input
+        id="import-file"
+        type="file"
+        accept="application/json,.json"
+        hidden
+      />
+    </div>
+    <noscript
+      >EXASCALE nécessite JavaScript. Activez-le pour initialiser le
+      circuit.</noscript
+    >
+    <script type="module" src="./src/main.js"></script>
+  </body>
+</html>

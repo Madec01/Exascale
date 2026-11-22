@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"
+    />
+    <title>EXASCALE · banc de rendu</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        overflow: hidden;
+        background: #090d14;
+      }
+      canvas {
+        display: block;
+        width: 100vw;
+        height: 100dvh;
+        touch-action: none;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="network"></canvas>
+    <script type="module">
+      import { Renderer } from "../src/renderer.js";
+      const nodes = [];
+      const edges = [];
+      for (let row = 0; row < 8; row++)
+        for (let column = 0; column < 8; column++) {
+          const i = row * 8 + column;
+          nodes.push({
+            id: `n${i}`,
+            type: column % 2 ? "modem" : "generator",
+            x: column,
+            y: row,
+            level: 1,
+            allocation: 50,
+            temp: 38,
+            quarantine: 0,
+            utilization: 0.83,
+            inRate: 830,
+            outRate: 830,
+            capacity: 1000,
+            power: 50,
+            status: "ACTIF",
+            progress: 0.4,
+            buffer: 125,
+            bufferMax: 500,
+            zone: "Europe",
+          });
+          if (column > 0)
+            edges.push({
+              id: `e${i}`,
+              from: `n${i - 1}`,
+              to: `n${i}`,
+              weight: 1,
+              kind: "data",
+              rate: 830,
+              capacity: 1000,
+              load: 0.83,
+              loss: 0,
+              flowType: [
+                "text",
+                "dataset",
+                "synthetic",
+                "concept",
+                "corrupt",
+                "fragment",
+              ][i % 6],
+            });
+        }
+      const engine = {
+        state: {
+          stage: 7,
+          nodes,
+          edges,
+          settings: { quality: "auto" },
+          stats: {},
+        },
+      };
+      const events = [];
+      const renderer = new Renderer(document.querySelector("canvas"), engine, {
+        onSelect: (x) => events.push(["select", x]),
+        onConnect: (a, b) => events.push(["connect", a, b]),
+        onMove: (id, x, y) => events.push(["move", id, x, y]),
+        onDeleteEdge: (id) => events.push(["delete", id]),
+      });
+      renderer.fit();
+      let handle = 0,
+        live = true;
+      function frame(t) {
+        if (!live) return;
+        renderer.draw(t);
+        handle = requestAnimationFrame(frame);
+      }
+      handle = requestAnimationFrame(frame);
+      window.harness = {
+        engine,
+        renderer,
+        events,
+        stop() {
+          live = false;
+          cancelAnimationFrame(handle);
+          renderer.destroy();
+        },
+        Renderer,
+      };
+    </script>
+  </body>
+</html>
